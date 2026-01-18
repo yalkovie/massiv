@@ -6,6 +6,7 @@ import Wind from './components/wind/Wind.jsx'
 function App() {
 
   let [bible, setBible] = useState([])
+  let mainBible = useRef(null)
   let filter = useRef(
     {
       "increase" : true,
@@ -17,7 +18,8 @@ function App() {
     fetch('./products.json')
     .then(res => res.json())
     .then(data => {
-      setBible(data.models)
+      mainBible.current = data.models
+      setBible(mainBible.current)
     })
     .catch(error => console.error('Ошибка загрузки:', error))
   }, [])
@@ -27,30 +29,34 @@ function App() {
     changer()
   }
 
-  function change_increase(el) {
-    filter.current["increase"] = el.target.value
+  function change_increase(event) {
+    filter.current["increase"] = event.target.value == 'increase'
     changer()
   }
 
-  // function changer() {
-  //   if (filter["increase"] === true) {
+  function changer() {
+    let productList = [...mainBible.current ]
+    if (filter.current['dis']) { /*чекбокс*/
+      productList = productList.filter(el => el.discountPercentage > 0)
+    }
 
-  //   } else {
+    productList = productList.sort((a, b) => {
+        if (filter.current['increase']) {
+          return (a.price - a.price * a.discountPercentage * 0.01) - (b.price - b.price * b.discountPercentage * 0.01)
+        } else {
+          return (b.price - b.price * b.discountPercentage * 0.01) - (a.price - a.price * a.discountPercentage * 0.01)
+        }
+    })
 
-  //   }
+    setBible(productList)
+  }
 
-  //   if (filter['dis'] === true) {
-
-  //   } else {
-      
-  //   }
-  // }
 
   return (
     <>
    <header>
     <select name="filter" onChange={change_increase}>
-      <option value="increase">Цена по возростанию</option>
+      <option value="increase">Цена по возрастанию</option>
       <option value="decrease">Цена по убыванию</option>
     </select>
       <input type="checkbox" id="sale-only" onChange={change_dis}/>
